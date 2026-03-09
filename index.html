@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cansu">
+<title>Cansu</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & BASE ─── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --cream:   #F5F0E8;
+  --cream2:  #EDE7D9;
+  --ink:     #2C2416;
+  --ink2:    #5C5040;
+  --ink3:    #9C8E7A;
+  --rose:    #C4826A;
+  --rose-l:  #E8C4B4;
+  --gold:    #B89A6A;
+  --white:   #FDFAF5;
+  --line:    rgba(44,36,22,0.12);
+}
+html, body {
+  height: 100%; width: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Jost', sans-serif;
+  overflow: hidden;
+  position: fixed;
+}
+
+/* ─── SPLASH ─── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--cream);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 32px;
+  transition: opacity 1s ease, transform 1s ease;
+}
+#splash.out { opacity: 0; transform: scale(0.97); pointer-events: none; }
+
+.splash-line {
+  width: 1px; height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--gold));
+  margin: 0 auto 32px;
+  animation: growLine 1.2s ease both;
+}
+.splash-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.7;
+  opacity: 0;
+  animation: fadeUp 1s ease 0.8s both;
+  max-width: 300px;
+}
+.splash-author {
+  margin-top: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0;
+  animation: fadeUp 1s ease 1.2s both;
+}
+.splash-bottom {
+  position: absolute; bottom: 52px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  opacity: 0;
+  animation: fadeUp 1s ease 2s both;
+}
+.splash-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.splash-enter {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--rose);
+  font-weight: 500;
+  animation: pulse 2s ease-in-out infinite;
+  cursor: pointer;
+  border: none; background: none;
+  font-family: 'Jost', sans-serif;
+}
+
+/* ─── APP SHELL ─── */
+#app {
+  display: flex; flex-direction: column;
+  height: 100%; width: 100%;
+  opacity: 0; transition: opacity 0.8s ease 0.3s;
+}
+#app.show { opacity: 1; }
+
+/* ─── HEADER ─── */
+.app-header {
+  padding: 52px 24px 0;
+  background: var(--cream);
+  flex-shrink: 0;
+}
+.header-inner {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.header-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+}
+.header-day {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+}
+
+/* ─── NAV ─── */
+.nav {
+  display: flex;
+  background: var(--cream);
+  overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+  padding: 0 24px;
+  gap: 0;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex-shrink: 0;
+  padding: 14px 0;
+  margin-right: 28px;
+  border: none; background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink3);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.25s;
+}
+.nav-btn.active { color: var(--ink); }
+.nav-btn.active::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--rose);
+}
+
+/* ─── CONTENT ─── */
+.content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.content::-webkit-scrollbar { display: none; }
+.tab { display: none; padding: 28px 24px 100px; }
+.tab.active { display: block; }
+
+/* ─── HOME TAB ─── */
+.day-hero {
+  text-align: center;
+  padding: 36px 0 40px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 36px;
+}
+.day-label {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 12px;
+}
+.day-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 96px; font-weight: 300; line-height: 1;
+  color: var(--ink);
+}
+.day-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-style: italic; font-weight: 300;
+  color: var(--ink2); margin-top: 8px;
+}
+.day-since {
+  margin-top: 16px;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold);
+}
+
+.countdown-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 36px;
+}
+.countdown-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 18px 14px;
+}
+.cd-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px; font-weight: 300; color: var(--rose);
+  line-height: 1;
+}
+.cd-unit { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); }
+.cd-label { font-size: 12px; color: var(--ink2); margin-top: 6px; font-weight: 400; }
+
+.section-label {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-key { font-size: 13px; color: var(--ink2); }
+.stat-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-weight: 400; color: var(--ink);
+}
+
+/* ─── PROFILE TAB ─── */
+.profile-intro {
+  text-align: center; padding: 28px 0 32px;
+  border-bottom: 1px solid var(--line); margin-bottom: 32px;
+}
+.profile-initial {
+  width: 72px; height: 72px;
+  border: 1px solid var(--rose-l);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-style: italic; color: var(--rose);
+}
+.profile-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 300; font-style: italic;
+  color: var(--ink);
+}
+.profile-role {
+  font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold); margin-top: 4px;
+}
+
+.profile-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 0; border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.pc-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.pc-body { flex: 1; }
+.pc-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+.pc-value { font-size: 15px; color: var(--ink); }
+.pc-value.empty { color: var(--ink3); font-style: italic; }
+.pc-edit { font-size: 18px; color: var(--line); flex-shrink: 0; margin-top: 2px; }
+
+/* ─── MEMORIES TAB ─── */
+.mem-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px;
+}
+.add-btn {
+  border: 1px solid var(--rose);
+  background: none;
+  color: var(--rose);
+  padding: 8px 16px;
+  border-radius: 2px;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.memory-item {
+  border-bottom: 1px solid var(--line);
+  padding: 24px 0;
+  animation: fadeUp 0.4s ease both;
+}
+.mem-date { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.mem-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 400; color: var(--ink); margin-bottom: 8px;
+}
+.mem-caption {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-style: italic; font-weight: 300;
+  color: var(--ink2); line-height: 1.6;
+}
+.mem-photo {
+  width: 100%; max-height: 260px; object-fit: cover;
+  border-radius: 2px; margin-bottom: 12px;
+  display: block;
+}
+.mem-mood {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink3);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--rose-l);
+}
+.mem-delete {
+  float: right; background: none; border: none;
+  color: var(--ink3); font-size: 16px; cursor: pointer; margin-top: 2px;
+}
+
+/* ─── TIMELINE TAB ─── */
+.timeline { padding-top: 8px; }
+.tl-item {
+  display: flex; gap: 16px;
+  padding-bottom: 32px;
+  animation: fadeUp 0.4s ease both;
+}
+.tl-left {
+  display: flex; flex-direction: column; align-items: center;
+  flex-shrink: 0; width: 28px;
+}
+.tl-dot {
+  width: 10px; height: 10px;
+  border: 1px solid var(--rose);
+  border-radius: 50%; flex-shrink: 0;
+  background: var(--cream);
+  margin-top: 4px;
+}
+.tl-dot.filled { background: var(--rose); }
+.tl-line { flex: 1; width: 1px; background: var(--line); margin-top: 6px; }
+.tl-right { flex: 1; }
+.tl-date { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.tl-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 400; color: var(--ink); margin-bottom: 4px;
+}
+.tl-desc { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.tl-photo { width: 100%; border-radius: 2px; margin-top: 10px; max-height: 180px; object-fit: cover; }
+
+.tl-add-btn {
+  width: 100%; padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 2px; background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink3); cursor: pointer; margin-top: 8px;
+}
+
+/* ─── LETTERS TAB ─── */
+.letter-wrap {
+  padding: 8px 0;
+}
+.letter-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 28px 22px;
+  margin-bottom: 20px;
+  position: relative;
+  animation: fadeUp 0.4s ease both;
+}
+.letter-card:nth-child(2) { animation-delay: 0.1s; }
+.letter-card:nth-child(3) { animation-delay: 0.2s; }
+.letter-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--rose);
+  border-radius: 2px 0 0 2px;
+}
+.letter-num {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+.letter-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; font-weight: 300; font-style: italic;
+  color: var(--ink); line-height: 1.8;
+}
+.letter-sig {
+  margin-top: 20px;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink3); text-align: right;
+}
+
+/* ─── BOTTOM SHEET ─── */
+#sheet-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(44,36,22,0.3);
+  display: none; backdrop-filter: blur(2px);
+}
+#sheet-overlay.open { display: block; }
+#sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+  background: var(--cream);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 24px 48px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  max-height: 85vh; overflow-y: auto;
+}
+#sheet.open { transform: translateY(0); }
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+.sheet-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 400; font-style: italic;
+  color: var(--ink); margin-bottom: 20px;
+}
+.sheet-input {
+  width: 100%; padding: 14px 0;
+  border: none; border-bottom: 1px solid var(--line);
+  background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 15px; color: var(--ink);
+  outline: none; margin-bottom: 16px;
+}
+.sheet-input::placeholder { color: var(--ink3); }
+.sheet-input:focus { border-bottom-color: var(--rose); }
+textarea.sheet-input { resize: none; height: 80px; }
+.sheet-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; display: block; }
+.sheet-mood-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.mood-pill {
+  padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--line);
+  background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px; letter-spacing: 1px;
+  color: var(--ink2); cursor: pointer;
+  transition: all 0.2s;
+}
+.mood-pill.sel { background: var(--rose); border-color: var(--rose); color: white; }
+.sheet-photo-btn {
+  width: 100%; padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 2px; background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--ink3); cursor: pointer; margin-bottom: 20px;
+}
+.sheet-save {
+  width: 100%; padding: 16px;
+  background: var(--rose); border: none; border-radius: 2px;
+  font-family: 'Jost', sans-serif;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  color: white; cursor: pointer;
+}
+.sheet-date-btn {
+  width: 100%; padding: 14px 0;
+  border: none; border-bottom: 1px solid var(--line);
+  background: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 15px; color: var(--ink);
+  text-align: left; cursor: pointer; margin-bottom: 16px;
+}
+
+/* ─── LIGHTBOX ─── */
+#lightbox {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(44,36,22,0.95);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#lightbox.open { display: flex; }
+#lb-img { max-width: 100%; max-height: 80vh; border-radius: 2px; }
+#lb-close { position: absolute; top: 52px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.7); font-size: 24px; cursor: pointer; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes growLine { from { height: 0; opacity: 0; } to { height: 60px; opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ─── EMPTY STATE ─── */
+.empty-state {
+  text-align: center; padding: 60px 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--ink3);
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-line"></div>
+  <p class="splash-quote" id="splashQuote"></p>
+  <p class="splash-author" id="splashAuthor"></p>
+  <div class="splash-bottom">
+    <p class="splash-name">Cansu Özçeri</p>
+    <button class="splash-enter" onclick="enterApp()">Aç &nbsp;↓</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLb()">
+  <button id="lb-close">✕</button>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- BOTTOM SHEET -->
+<div id="sheet-overlay" onclick="closeSheet()"></div>
+<div id="sheet">
+  <div class="sheet-handle"></div>
+  <div id="sheet-content"></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-header">
+    <div class="header-inner">
+      <span class="header-title">Seninle Her An</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#6BCB77;transition:background 0.5s" title="Sync"></div>
+        <span class="header-day" id="headerDay"></span>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="goTab('home',this)">Biz</button>
+      <button class="nav-btn" onclick="goTab('profile',this)">Cansu</button>
+      <button class="nav-btn" onclick="goTab('memories',this)">Anılar</button>
+      <button class="nav-btn" onclick="goTab('timeline',this)">Zaman</button>
+      <button class="nav-btn" onclick="goTab('letters',this)">Notlar</button>
+    </nav>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div id="tab-home" class="tab active">
+      <div class="day-hero">
+        <div class="day-label">Birlikte</div>
+        <div class="day-number" id="dayNum">0</div>
+        <div class="day-sub">gün geçti</div>
+        <div class="day-since">6 Kasım 2025'ten bu yana</div>
+      </div>
+
+      <div class="section-label" style="margin-bottom:20px">Yaklaşan Günler</div>
+      <div class="countdown-grid">
+        <div class="countdown-card">
+          <div class="cd-num" id="cd-tip">—</div>
+          <div class="cd-unit">gün</div>
+          <div class="cd-label">🩺 Tıp Bayramı</div>
+        </div>
+        <div class="countdown-card">
+          <div class="cd-num" id="cd-anni">—</div>
+          <div class="cd-unit">gün</div>
+          <div class="cd-label">💜 Yıldönümü</div>
+        </div>
+        <div class="countdown-card">
+          <div class="cd-num" id="cd-500">—</div>
+          <div class="cd-unit">gün</div>
+          <div class="cd-label">🎉 500. Gün</div>
+        </div>
+        <div class="countdown-card">
+          <div class="cd-num" id="cd-bday">—</div>
+          <div class="cd-unit">gün</div>
+          <div class="cd-label" id="cd-bday-lbl">🎂 Doğum Günü</div>
+        </div>
+      </div>
+
+      <div class="section-label">İstatistikler</div>
+      <div class="stat-row">
+        <span class="stat-key">İlk buluşma</span>
+        <span class="stat-val">6 Kasım 2025</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-key">Toplam saat</span>
+        <span class="stat-val" id="stat-hours">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-key">Toplam dakika</span>
+        <span class="stat-val" id="stat-mins">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-key">Sevgiler</span>
+        <span class="stat-val">Sayısız 💜</span>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="tab-profile" class="tab">
+      <div class="profile-intro">
+        <div class="profile-initial">C</div>
+        <div class="profile-name">Cansu Özçeri</div>
+        <div class="profile-role">Doktor &nbsp;·&nbsp; 🩺</div>
+      </div>
+
+      <div id="profile-fields"></div>
+    </div>
+
+    <!-- MEMORIES -->
+    <div id="tab-memories" class="tab">
+      <div class="mem-header">
+        <div class="section-label" style="margin:0">Anı Kapsülü</div>
+        <button class="add-btn" onclick="openMemorySheet()">+ Ekle</button>
+      </div>
+      <div id="memory-list"></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div id="tab-timeline" class="tab">
+      <div class="section-label" style="margin-bottom:24px">Zaman Tüneli</div>
+      <div class="timeline" id="timeline-list"></div>
+      <button class="tl-add-btn" onclick="openTimelineSheet()">+ An Ekle</button>
+    </div>
+
+    <!-- LETTERS -->
+    <div id="tab-letters" class="tab">
+      <div class="section-label" style="margin-bottom:24px">Psikiyatri Notları</div>
+      <div class="letter-wrap" id="letter-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<input type="file" id="photo-input" accept="image/*" style="display:none">
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const QUOTES = [
+  {q:"Aşk, ihtiyaç duyduğunuz için değil; paylaşmak istediğiniz için vermektir.", a:"Erich Fromm"},
+  {q:"İki kişiliğin buluşması, iki kimyasal maddenin teması gibidir; bir şey olursa, ikisi de dönüşür.", a:"Carl Jung"},
+  {q:"Sevmek bir karar, bir yargı, bir sözdür. Eğer sevgi yalnızca bir his olsaydı, sonsuza dek sevme sözü için hiçbir temel olmazdı.", a:"Erich Fromm"},
+  {q:"Bir insanı en iç özünden kavramanın tek yolu sevgidir.", a:"Viktor Frankl"},
+  {q:"Başkalarını güçlü bir şekilde sevebilmek için, önce kendinizi sevebilmeniz gerekir.", a:"Rollo May"},
+  {q:"Asla bu kadar savunmasız olmayız, asla bu kadar acıya açık olmayız — sevdiğimizde.", a:"Sigmund Freud"},
+  {q:"Yalnız kalabilme kapasitesi, sevebilme kapasitesidir.", a:"Irvin Yalom"},
+  {q:"Gerçek sevgi, birinin yetişmesine ve büyümesine önem vermektir.", a:"Erich Fromm"},
+  {q:"İçinde bulunduğun koşulları artık değiştiremiyorsan — kendini değiştirmen gerekir.", a:"Viktor Frankl"},
+  {q:"Hayatın anlamı, onu yaşamak, yeteneklerinizi tam olarak kullanmak ve onu, tam ve dürüstçe kullanmak demektir.", a:"Erich Fromm"}
+];
+
+const CAPTIONS = {
+  romantic: [
+    "Seninle geçen her an, ömrümün en değerli sayfası.",
+    "Gözlerinde kaybolmak, bulunmak gibi geliyor bana.",
+    "Seni sevmek, nefes almak kadar doğal.",
+    "Elini tuttuğumda, her şeyin yerli yerine oturduğunu hissediyorum.",
+    "Sen olunca her yer ev gibi hissettiriyor.",
+    "Varlığın benim için en güzel şiir.",
+    "Seni bulduğumda, aslında kendimi bulduğumu anladım.",
+    "Bir gülüşün benim için tüm dünya demek.",
+    "Seninle olan her fotoğraf, bir aşk hikayesinin sayfası.",
+    "Kalbimin en sessiz köşesinde, daima sen varsın."
+  ],
+  nostalgic: [
+    "O gün her şey farklıydı. Ama sen aynıydın.",
+    "Bu an geçti ama kalbimde hâlâ yaşıyor.",
+    "Seni ilk gördüğümde dünya biraz farklı dönmeye başladı.",
+    "Zaman geçiyor, anılar kalıyor. Sen de.",
+    "Geçmişe baktığımda, seninle olan her anı seçerdim yeniden.",
+    "Başlangıçlar her zaman en güzel anlar olmaz, ama bizimki öyleydi.",
+    "Büyüdük. Değiştik. Ama birbirimize dönmeye devam ettik.",
+    "Nereden nereye geldik. Her adım, seninle değerliydi."
+  ],
+  poetic: [
+    "Işık seninle geldi, seninle kaldı.",
+    "Sen benim için hem liman hem açık denizsin.",
+    "Her bakışında bir şiir sakladın, ben de okumayı öğrendim.",
+    "Seninle zaman durdu. Dünya döndü. İkimiz kaldık.",
+    "Ruhların buluşması için kelimeler gerekmez.",
+    "İki kalbin aynı ritme düşmesi bir mucizedir.",
+    "Sen benim içimde bir şarkısın — sözsüz ama derin.",
+    "Seninle sessizlik bile konuşur."
+  ],
+  funny: [
+    "Seni seviyorum ama kahveni çalmaya devam edeceğim.",
+    "İkimiz de yorgunuz, ikimiz de açız, ikimiz de gülüyoruz. Mantıklı değil.",
+    "Film seçerken geçen zamanla aynı film izlesek daha az zaman alırdı.",
+    "Yemek için anlaşamıyoruz ama bu ilişkinin en romantik yanı bu.",
+    "Seninle yaptığım her saçmalık, sonradan en sevdiğimiz anı oluyor."
+  ]
+};
+
+const DEFAULT_TIMELINE = [
+  {id:'t1', date:'2025-11-06', title:'İlk Buluşma', desc:'Her şeyin başladığı gün.', filled:true},
+  {id:'t2', date:'2025-11-16', title:'İlk "Seni Seviyorum"', desc:'O üç kelime her şeyi değiştirdi.', filled:true},
+  {id:'t3', date:'2025-12-31', title:'Yılbaşı Gecesi', desc:'Yeni yıla birlikte girdik.', filled:true},
+  {id:'t4', date:'2026-02-14', title:'Seferihisar', desc:'Birlikte güzel bir gün geçirdik.', filled:true},
+  {id:'t5', date:'2026-03-05', title:'Ailemi Tanıdı', desc:'Cansu ailemi tanıdı.', filled:true},
+  {id:'t6', date:'2026-03-14', title:'Tıp Bayramı', desc:'Seninle kutlamak istediğim özel bir gün.', filled:false}
+];
+
+const PROFILE_FIELDS = [
+  {key:'flower',    icon:'🌸', label:'En Sevdiği Çiçek',  val:''},
+  {key:'coffee',    icon:'☕', label:'Kahve Tercihi',      val:''},
+  {key:'ring',      icon:'💍', label:'Yüzük Ölçüsü',      val:''},
+  {key:'blood',     icon:'🩸', label:'Kan Grubu',          val:''},
+  {key:'dessert',   icon:'🍰', label:'Favori Tatlı',       val:''},
+  {key:'food',      icon:'🍽️', label:'Favori Yemek',       val:''},
+  {key:'artist',    icon:'🎵', label:'Favori Sanatçı',     val:''},
+  {key:'birthday',  icon:'🎂', label:'Doğum Günü',         val:''},
+  {key:'notes',     icon:'⚠️', label:'Önemli Notlar',      val:''},
+];
+
+// Haftada bir güncellenir — bu haftanın notu
+const PSYCH_WEEK = getWeekNumber(new Date());
+
+const PSYCH_NOTES = [
+  {
+    theme: 'Bağlanma & Sevgi',
+    thinker: 'John Bowlby',
+    field: 'Bağlanma Teorisi',
+    note: 'Bowlby\'ye göre güvenli bağlanma, çocuklukta bir "güvenli üs" deneyimiyle başlar. Yetişkinlikte de romantik ilişkiler bu örüntüyü yansıtır: güvenli bağlanan bireyler hem bağımsız olabilir, hem de derin yakınlık kurabilirler. Bağlanma stili değişmez değildir — farkındalık ve sağlıklı bir ilişki bağlanma biçimini yeniden şekillendirebilir.',
+    quote: '"Güvenli bağlanma, özgür keşfin temelidir."',
+    author: 'John Bowlby'
+  },
+  {
+    theme: 'Sevginin Psikolojisi',
+    thinker: 'Erich Fromm',
+    field: 'Hümanist Psikanalizm',
+    note: 'Fromm\'a göre sevgi bir duygu değil, bir sanattır — öğrenilmesi ve pratik yapılması gerekir. "Sahip olma" değil, "olma" modunda yaşayan insanlar sevgide de özgürlük tanır. Olgun sevgi şunu der: "Seni seviyorum çünkü seni seviyorum" — değiş tokuş değil, özgür bir eylem.',
+    quote: '"Olgun sevgi şunu der: Ben seni sevdiğim için sana ihtiyacım var. Olgunlaşmamış sevgi şunu der: Sana ihtiyacım olduğu için seni seviyorum."',
+    author: 'Erich Fromm'
+  },
+  {
+    theme: 'Anlam & Varoluş',
+    thinker: 'Viktor Frankl',
+    field: 'Logoterapi',
+    note: 'Frankl, anlam aramanın insan varoluşunun temel itici gücü olduğunu savundu. En ağır koşullarda bile — toplama kampında bile — insanlar anlam bulabiliyordu. Bir ilişkinin anlamı da "neden" sorusuna verilecek cevapla güçlenir: bu birliktelik neden değerli? Bu soruyu düşünmek, ilişkiyi sağlamlaştırır.',
+    quote: '"Hayata bir "neden" olan kişi, neredeyse her "nasıl"a katlanabilir."',
+    author: 'Viktor Frankl'
+  },
+  {
+    theme: 'Gölge & Bütünleşme',
+    thinker: 'Carl Jung',
+    field: 'Analitik Psikoloji',
+    note: 'Jung\'a göre "gölge", kabul etmediğimiz yanlarımızın barındığı bilinçdışı alandır. Partnerimizde bizi en çok rahatsız eden şeyler çoğunlukla kendi gölgemizin yansımasıdır. Bu farkındalık, ilişkilerde öfkeyi empatiyle, yargıyı merakla değiştirme kapısını açar. Kendini tanımak, karşındakini anlamanın başlangıcıdır.',
+    quote: '"Başkalarında bizi rahatsız eden her şey, kendimizi anlamaya götürebilir."',
+    author: 'Carl Jung'
+  },
+  {
+    theme: 'Varoluşsal Yalnızlık',
+    thinker: 'Irvin Yalom',
+    field: 'Varoluşsal Psikoterapi',
+    note: 'Yalom\'a göre dört temel varoluşsal kaygı vardır: ölüm, özgürlük, anlamsızlık ve yalnızlık. Varoluşsal yalnızlık hiçbir zaman tam olarak giderilemez — en derin ilişkide bile bir kişi olarak yalnızsınızdır. Ama bu gerçeği kabullenmek, ilişkiyi daha otantik kılar: birbirinizi "kurtarmak" için değil, birlikte "olmak" için biraradasınız.',
+    quote: '"Yalnız kalabilme kapasitesi, sevebilme kapasitesidir."',
+    author: 'Irvin Yalom'
+  },
+  {
+    theme: 'Özgünlük & Kaygı',
+    thinker: 'Rollo May',
+    field: 'Varoluşsal Psikoloji',
+    note: 'May\'e göre kaygı, özgürlüğün doğal eşlikçisidir. Gerçek bir seçim yaparken — bir kişiyi sevmeyi, bir hayat kurmayı — kaygı hissedilmesi normaldir. Bunu bastırmak değil, onunla birlikte hareket etmek sağlıklı olanıdır. Cesaret, korku yokken değil, korku varken eyleme geçmektir.',
+    quote: '"Cesaret, korkusuzluk değildir; korkuya rağmen ilerleme yetisidir."',
+    author: 'Rollo May'
+  },
+  {
+    theme: 'Bilişsel Çarpıtmalar',
+    thinker: 'Aaron Beck',
+    field: 'Bilişsel Terapi',
+    note: 'Beck\'in bilişsel teorisine göre düşüncelerimiz duygu ve davranışlarımızı şekillendirir. İlişkilerde sık görülen çarpıtmalar şunlardır: "zihin okuma" (partnerim ne düşündüğünü biliyorum), "felaketleştirme" (bu tartışma her şeyi mahveder), "ya hep ya hiç" (mükemmel değilse hiç değil). Bu örüntüleri fark etmek, değişimin ilk adımıdır.',
+    quote: '"Düşüncelerini değiştir, hayatını değiştirirsin."',
+    author: 'Aaron Beck'
+  },
+  {
+    theme: 'İnferiority & Büyüme',
+    thinker: 'Alfred Adler',
+    field: 'Bireysel Psikoloji',
+    note: 'Adler, her insanın bir "aşağılık duygusu" ile doğduğunu ve hayatının bu duyguyu aşma çabası üzerine kurulduğunu öne sürdü. Sağlıklı bireylerde bu çaba sosyal ilgiyle — başkalarına katkıda bulunma arzusuyla — yönlendirilir. İlişkide birbirinin güçlenmesini istemek, olgun sevginin göstergesidir.',
+    quote: '"Bir insanın değeri, başkalarına ne kattığıyla ölçülür."',
+    author: 'Alfred Adler'
+  },
+  {
+    theme: 'Nörotik İhtiyaçlar',
+    thinker: 'Karen Horney',
+    field: 'Neofreudyen Psikanaliz',
+    note: 'Horney\'e göre temel kaygı — dünyanın düşmanca olduğu hissi — çocuklukta yetersiz güvenlik ortamından doğar. Bu kaygıyı gidermeye çalışırken üç yöne yöneliriz: insanlara doğru (bağımlılık), insanlara karşı (saldırganlık) veya insanlardan uzağa (çekilme). Sağlıklı ilişki bu üç yönelimi esnek biçimde kullanabilmektir.',
+    quote: '"İç büyüme, özünde "olmalıyım"ların tiranlığından kurtuluştur."',
+    author: 'Karen Horney'
+  },
+  {
+    theme: 'Bilinçdışı & Rüyalar',
+    thinker: 'Sigmund Freud',
+    field: 'Psikanaliz',
+    note: 'Freud\'a göre bilinçdışı, bastırılmış arzu, korku ve anıların deposudur. Rüyalar bu içeriğin sembolik dışavurumudur — "bilinçdışının kraliyet yolu." Sevdiğimiz insanlarla ilgili tekrar eden rüyalar ya da duygular, bilinçdışı bağların gücünü yansıtabilir. Freud için bilinçdışını keşfetmek, kendini özgür kılmaktır.',
+    quote: '"Söylenmeyenler gömülü kalır; ama daha sonra daha çirkin biçimlerde ortaya çıkar."',
+    author: 'Sigmund Freud'
+  },
+  {
+    theme: 'Şimdiki An & Farkındalık',
+    thinker: 'William James',
+    field: 'Psikoloji & Pragmatizm',
+    note: 'James, dikkatimizi yönlendirme kapasitesini "özgür iradenin büyük eseri" olarak tanımladı. Sevgi dolu ilişkilerde dikkat bir hediyedir: tamamen orada olmak, telefonsuz, düşüncesiz, sadece karşındakiyle. James\'e göre alışkanlıklar karakteri yaratır — "dikkatli olmak" da bir alışkanlık olarak geliştirilebilir.',
+    quote: '"Dikkatimizi isteyerek yönetebilme yetisi, yargı gücünün, karakterin ve iradenin temelidir."',
+    author: 'William James'
+  },
+  {
+    theme: 'Kolektif Bilinçdışı',
+    thinker: 'Carl Jung',
+    field: 'Analitik Psikoloji',
+    note: 'Jung\'un kolektif bilinçdışı kavramı, tüm insanlığın paylaştığı sembolik içerikleri — arketipleri — barındırır. "Anima" ve "animus" arketipleri, bizdeki eril ve dişil enerjiyi temsil eder. Partner seçiminde bilinçdışı olarak bu arketipleri yansıtan birini ararız. Bu farkındalık, ilişkiyi daha bilinçli, daha seçici kılar.',
+    quote: '"Kendinize baktığınızda içeride karanlık görürseniz, en azından orada bir şeyler var."',
+    author: 'Carl Jung'
+  },
+];
+
+function getWeekNumber(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────────────────
+const SB_URL = 'https://obtteztxqsthlictthlx.supabase.co';
+const SB_KEY = 'sb_publishable_Y7L7dgmbDDBy0XdoJheJtQ_YekLSEO1';
+const SB_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Prefer': 'return=representation'
+};
+
+// Local cache (fallback offline)
+const L = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+async function dbGet(table) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?select=*`, { headers: SB_HEADERS });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function dbUpsert(table, row) {
+  try {
+    const h = {...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation'};
+    const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+      method: 'POST', headers: h, body: JSON.stringify(row)
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function dbDelete(table, id) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+      method: 'DELETE', headers: SB_HEADERS
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+// ── Realtime polling (her 8 saniyede sync) ────────────────────────────────────
+let _lastMemHash = '', _lastTlHash = '', _lastProfHash = '';
+
+async function pollSync() {
+  // Memories
+  const mems = await dbGet('memories');
+  if (mems) {
+    const h = JSON.stringify(mems);
+    if (h !== _lastMemHash) {
+      _lastMemHash = h;
+      const sorted = mems.sort((a,b) => b.created_at?.localeCompare(a.created_at||'') || 0);
+      L.set('memories', sorted);
+      renderMemories();
+    }
+  }
+  // Timeline
+  const tl = await dbGet('timeline');
+  if (tl && tl.length) {
+    const h = JSON.stringify(tl);
+    if (h !== _lastTlHash) {
+      _lastTlHash = h;
+      const sorted = tl.sort((a,b) => a.date.localeCompare(b.date));
+      L.set('timeline', sorted);
+      renderTimeline();
+    }
+  }
+  // Profile
+  const prof = await dbGet('profile');
+  if (prof && prof.length) {
+    const h = JSON.stringify(prof[0]);
+    if (h !== _lastProfHash) {
+      _lastProfHash = h;
+      L.set('profile', prof[0].data);
+      initProfile();
+    }
+  }
+}
+
+function startSync() {
+  pollSync();
+  setInterval(pollSync, 8000);
+}
+
+// ── Sync indicator ────────────────────────────────────────────────────────────
+function showSyncing() {
+  let el = document.getElementById('sync-dot');
+  if (!el) return;
+  el.style.background = '#B89A6A';
+  setTimeout(() => { if(el) el.style.background = '#6BCB77'; }, 1000);
+}
+
+// ── STORAGE API (drop-in replacement) ────────────────────────────────────────
+function loadProfile() {
+  const stored = L.get('profile');
+  if (stored) return stored;
+  return { birthday: '1997-05-21' };
+}
+
+async function saveProfile(p) {
+  L.set('profile', p);
+  await dbUpsert('profile', { id: 1, data: p });
+  showSyncing();
+}
+
+function loadMemories() { return L.get('memories') || []; }
+
+async function saveMemories(m) {
+  L.set('memories', m);
+  showSyncing();
+}
+
+function loadTimeline() { return L.get('timeline') || DEFAULT_TIMELINE; }
+
+async function saveTimeline(t) {
+  L.set('timeline', t);
+  showSyncing();
+}
+
+// ── SPLASH ─────────────────────────────────────────────────────────────────────
+const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+document.getElementById('splashQuote').textContent = `"${q.q}"`;
+document.getElementById('splashAuthor').textContent = `— ${q.a}`;
+
+function enterApp() {
+  document.getElementById('splash').classList.add('out');
+  document.getElementById('app').classList.add('show');
+  initAll();
+}
+// Also enter on tap anywhere on splash
+document.getElementById('splash').addEventListener('click', enterApp);
+
+// ── TABS ───────────────────────────────────────────────────────────────────────
+function goTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+function initAll() {
+  initHome();
+  initProfile();
+  renderMemories();
+  renderTimeline();
+  renderLetters();
+  startSync();
+}
+
+// ── HOME ───────────────────────────────────────────────────────────────────────
+function initHome() {
+  const start = new Date('2025-11-06');
+  const today = new Date();
+  const days = Math.floor((today - start) / 864e5);
+
+  // Animate day counter
+  let i = 0;
+  const el = document.getElementById('dayNum');
+  const iv = setInterval(() => {
+    el.textContent = i;
+    i += Math.max(1, Math.floor(days / 40));
+    if (i >= days) { clearInterval(iv); el.textContent = days; }
+  }, 25);
+
+  document.getElementById('stat-hours').textContent = (days * 24).toLocaleString('tr-TR');
+  document.getElementById('stat-mins').textContent = (days * 1440).toLocaleString('tr-TR');
+
+  // Header day
+  document.getElementById('headerDay').textContent = days + '. Gün';
+
+  // Countdowns
+  function daysUntil(month, day) {
+    const t = new Date();
+    let d = new Date(t.getFullYear(), month-1, day);
+    if (d < t) d = new Date(t.getFullYear()+1, month-1, day);
+    return Math.ceil((d - t) / 864e5);
+  }
+
+  document.getElementById('cd-tip').textContent = daysUntil(3,14);
+  const annD = daysUntil(11,6);
+  document.getElementById('cd-anni').textContent = annD === 0 ? '🎉' : annD;
+
+  const day500 = new Date(start); day500.setDate(day500.getDate()+499);
+  const d500 = Math.ceil((day500 - today) / 864e5);
+  document.getElementById('cd-500').textContent = d500 > 0 ? d500 : '✓';
+
+  // Birthday from profile
+  const prof = loadProfile();
+  if (prof.birthday) {
+    const [y,m,d] = prof.birthday.split('-').map(Number);
+    document.getElementById('cd-bday').textContent = daysUntil(m, d);
+    document.getElementById('cd-bday-lbl').textContent = '🎂 Cansu\'nun Doğum Günü';
+  } else {
+    document.getElementById('cd-bday').textContent = '?';
+  }
+}
+
+// ── PROFILE ────────────────────────────────────────────────────────────────────
+function initProfile() {
+  const prof = loadProfile();
+  const container = document.getElementById('profile-fields');
+  container.innerHTML = '';
+  PROFILE_FIELDS.forEach(f => {
+    const val = prof[f.key] || '';
+    const div = document.createElement('div');
+    div.className = 'profile-card';
+    div.innerHTML = `
+      <span class="pc-icon">${f.icon}</span>
+      <div class="pc-body">
+        <div class="pc-label">${f.label}</div>
+        <div class="pc-value ${val ? '' : 'empty'}">${val || 'Henüz eklenmedi…'}</div>
+      </div>
+      <span class="pc-edit">›</span>`;
+    div.onclick = () => openProfileEdit(f);
+    container.appendChild(div);
+  });
+}
+
+function openProfileEdit(field) {
+  const prof = loadProfile();
+  const cur = prof[field.key] || '';
+  const isDate = field.key === 'birthday';
+  const isLong = field.key === 'notes';
+  const inputHtml = isDate
+    ? `<input type="date" class="sheet-input" id="pedit-input" value="${cur}" max="${new Date().toISOString().slice(0,10)}">`
+    : isLong
+    ? `<textarea class="sheet-input" id="pedit-input" placeholder="Notlar…">${cur}</textarea>`
+    : `<input type="text" class="sheet-input" id="pedit-input" placeholder="Gir…" value="${cur}">`;
+
+  showSheet(`
+    <p class="sheet-title">${field.icon} ${field.label}</p>
+    ${inputHtml}
+    <button class="sheet-save" onclick="saveProfileField('${field.key}')">Kaydet</button>
+  `);
+  setTimeout(() => document.getElementById('pedit-input')?.focus(), 300);
+}
+
+function saveProfileField(key) {
+  const val = document.getElementById('pedit-input').value.trim();
+  const prof = loadProfile();
+  prof[key] = val;
+  L.set('profile', prof);
+  closeSheet();
+  initProfile();
+  if (key === 'birthday') initHome();
+  // Arka planda Supabase'e gönder
+  dbUpsert('profile', { id: 1, data: prof }).then(showSyncing);
+}
+
+// ── MEMORIES ───────────────────────────────────────────────────────────────────
+let _memMood = 'romantic';
+let _memPhoto = null;
+let _memDate = new Date().toISOString().slice(0,10);
+
+function openMemorySheet() {
+  _memMood = 'romantic'; _memPhoto = null; _memDate = new Date().toISOString().slice(0,10);
+  showSheet(`
+    <p class="sheet-title">Yeni Anı</p>
+    <input type="text" class="sheet-input" id="mem-title" placeholder="Başlık…">
+    <input type="date" class="sheet-input" id="mem-date" value="${_memDate}" max="${_memDate}">
+    <span class="sheet-label">Duygu</span>
+    <div class="sheet-mood-row">
+      <button class="mood-pill sel" onclick="selMood('romantic',this)">💜 Romantik</button>
+      <button class="mood-pill" onclick="selMood('nostalgic',this)">🌙 Nostaljik</button>
+      <button class="mood-pill" onclick="selMood('poetic',this)">🌸 Şiirsel</button>
+      <button class="mood-pill" onclick="selMood('funny',this)">😂 Komik</button>
+    </div>
+    <button class="sheet-photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
+    <button class="sheet-save" onclick="saveMemory()">Kaydet</button>
+  `);
+}
+
+function selMood(mood, btn) {
+  _memMood = mood;
+  document.querySelectorAll('.mood-pill').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+document.getElementById('photo-input').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _memPhoto = e.target.result;
+    const btn = document.querySelector('.sheet-photo-btn');
+    if (btn) btn.textContent = '✓ Fotoğraf seçildi';
+  };
+  reader.readAsDataURL(file);
+  this.value = '';
+});
+
+function randomCaption(mood) {
+  const list = CAPTIONS[mood] || CAPTIONS.romantic;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+async function saveMemory() {
+  const title = document.getElementById('mem-title')?.value.trim();
+  const date  = document.getElementById('mem-date')?.value;
+  if (!title) return;
+  const mem = {
+    id: Date.now().toString(),
+    title, date: date || _memDate,
+    mood: _memMood,
+    caption: randomCaption(_memMood),
+    photo: _memPhoto || null,
+    created_at: new Date().toISOString()
+  };
+  // Hemen kaydet ve göster — bekletme
+  const list = loadMemories();
+  list.unshift(mem);
+  L.set('memories', list);
+  closeSheet();
+  renderMemories();
+  // Arka planda Supabase'e gönder
+  dbUpsert('memories', mem).then(showSyncing);
+}
+
+function renderMemories() {
+  const list = loadMemories();
+  const el = document.getElementById('memory-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state">Henüz anı yok…<br>İlk anını ekle.</div>';
+    return;
+  }
+  el.innerHTML = list.map((m,i) => `
+    <div class="memory-item" style="animation-delay:${i*0.06}s">
+      ${m.photo ? `<img class="mem-photo" src="${m.photo}" alt="${m.title}" onclick="openLb('${m.photo}')">` : ''}
+      <div class="mem-date">${fmtDate(m.date)}</div>
+      <div class="mem-title">${m.title}</div>
+      <div class="mem-caption">"${m.caption}"</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="mem-mood">${moodLabel(m.mood)}</span>
+        <button class="mem-delete" onclick="deleteMem('${m.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteMem(id) {
+  const list = loadMemories().filter(m => m.id !== id);
+  L.set('memories', list);
+  await dbDelete('memories', id);
+  showSyncing();
+  renderMemories();
+}
+
+function moodLabel(mood) {
+  return {romantic:'💜 Romantik', nostalgic:'🌙 Nostaljik', poetic:'🌸 Şiirsel', funny:'😂 Komik'}[mood] || '';
+}
+
+// ── TIMELINE ───────────────────────────────────────────────────────────────────
+function renderTimeline() {
+  const items = loadTimeline();
+  const el = document.getElementById('timeline-list');
+  el.innerHTML = items.map((item, i) => `
+    <div class="tl-item" style="animation-delay:${i*0.08}s">
+      <div class="tl-left">
+        <div class="tl-dot ${item.filled ? 'filled' : ''}"></div>
+        ${i < items.length-1 ? '<div class="tl-line"></div>' : ''}
+      </div>
+      <div class="tl-right">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="tl-date">${fmtDate(item.date)}</div>
+          <button onclick="deleteTlItem('${item.id}')" style="background:none;border:none;color:var(--ink3);font-size:15px;cursor:pointer;padding:0 0 0 8px;line-height:1">✕</button>
+        </div>
+        <div class="tl-title">${item.title}</div>
+        ${item.desc ? `<div class="tl-desc">${item.desc}</div>` : ''}
+        ${item.photo ? `<img class="tl-photo" src="${item.photo}" onclick="openLb('${item.photo}')">` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteTlItem(id) {
+  const items = loadTimeline().filter(t => t.id !== id);
+  L.set('timeline', items);
+  await dbDelete('timeline', id);
+  showSyncing();
+  renderTimeline();
+}
+
+function openTimelineSheet() {
+  _memPhoto = null;
+  const today = new Date().toISOString().slice(0,10);
+  showSheet(`
+    <p class="sheet-title">Zaman Tüneliine Ekle</p>
+    <input type="text" class="sheet-input" id="tl-title" placeholder="Başlık…">
+    <input type="text" class="sheet-input" id="tl-desc" placeholder="Açıklama… (isteğe bağlı)">
+    <input type="date" class="sheet-input" id="tl-date" value="${today}">
+    <button class="sheet-photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
+    <button class="sheet-save" onclick="saveTlItem()">Ekle</button>
+  `);
+}
+
+async function saveTlItem() {
+  const title = document.getElementById('tl-title')?.value.trim();
+  const desc  = document.getElementById('tl-desc')?.value.trim();
+  const date  = document.getElementById('tl-date')?.value;
+  if (!title) return;
+  const item = { id: Date.now().toString(), title, desc, date, filled: true, photo: _memPhoto || null };
+  const items = loadTimeline();
+  items.push(item);
+  items.sort((a,b) => a.date.localeCompare(b.date));
+  L.set('timeline', items);
+  closeSheet();
+  renderTimeline();
+  // Arka planda Supabase'e gönder
+  dbUpsert('timeline', item).then(showSyncing);
+}
+
+// ── LETTERS ────────────────────────────────────────────────────────────────────
+function renderLetters() {
+  const el = document.getElementById('letter-list');
+  // This week's note (cycles through the list by week number)
+  const thisWeek = PSYCH_NOTES[PSYCH_WEEK % PSYCH_NOTES.length];
+  // Show this week's + 2 previous
+  const shown = [];
+  for (let i = 0; i < Math.min(3, PSYCH_NOTES.length); i++) {
+    shown.push(PSYCH_NOTES[(PSYCH_WEEK - i + PSYCH_NOTES.length) % PSYCH_NOTES.length]);
+  }
+
+  el.innerHTML = `
+    <div style="padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:24px">
+      <div class="section-label" style="margin-bottom:6px">Bu Hafta</div>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:var(--ink3)">
+        Her hafta yeni bir düşünür, yeni bir bakış açısı.
+      </p>
+    </div>
+    ${shown.map((note, i) => `
+    <div class="letter-card" style="animation-delay:${i*0.1}s;${i===0?'border-left-color:var(--rose)':'border-left-color:var(--gold)'}">
+      ${i===0 ? '<div class="letter-num" style="color:var(--rose)">Bu Hafta</div>' : `<div class="letter-num">Geçen Hafta ${i>1?i:''}  </div>`}
+      <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap">
+        <span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">${note.thinker}</span>
+        <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)">${note.field}</span>
+      </div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px">${note.theme}</div>
+      <div class="letter-text" style="font-style:normal;font-size:14px;line-height:1.75;color:var(--ink2)">${note.note}</div>
+      <div style="margin-top:18px;padding:14px 16px;background:var(--cream2);border-radius:2px;border-left:2px solid var(--rose)">
+        <div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;font-style:italic;color:var(--ink);line-height:1.6">${note.quote}</div>
+        <div style="margin-top:8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)">— ${note.author}</div>
+      </div>
+    </div>
+  `).join('')}
+  `;
+}
+
+// ── BOTTOM SHEET ──────────────────────────────────────────────────────────────
+function showSheet(html) {
+  document.getElementById('sheet-content').innerHTML = html;
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+function openLb(src) {
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLb() { document.getElementById('lightbox').classList.remove('open'); }
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function fmtDate(str) {
+  if (!str) return '';
+  const [y,m,d] = str.split('-');
+  return `${parseInt(d)} ${TR_MONTHS[parseInt(m)-1]} ${y}`;
+}
+</script>
+</body>
+</html>

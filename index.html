@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cansu">
@@ -462,14 +463,6 @@ textarea.sheet-input { resize: none; height: 80px; }
   font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
   color: white; cursor: pointer;
 }
-.sheet-date-btn {
-  width: 100%; padding: 14px 0;
-  border: none; border-bottom: 1px solid var(--line);
-  background: none;
-  font-family: 'Jost', sans-serif;
-  font-size: 15px; color: var(--ink);
-  text-align: left; cursor: pointer; margin-bottom: 16px;
-}
 
 /* ─── LIGHTBOX ─── */
 #lightbox {
@@ -494,6 +487,17 @@ textarea.sheet-input { resize: none; height: 80px; }
   font-size: 18px; font-style: italic;
   color: var(--ink3);
 }
+
+/* ─── SAVING INDICATOR ─── */
+.saving-toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--cream);
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  opacity: 0; transition: opacity 0.3s; z-index: 500;
+  pointer-events: none;
+}
+.saving-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -521,6 +525,9 @@ textarea.sheet-input { resize: none; height: 80px; }
   <div class="sheet-handle"></div>
   <div id="sheet-content"></div>
 </div>
+
+<!-- SAVING TOAST -->
+<div class="saving-toast" id="saving-toast">Kaydediliyor…</div>
 
 <!-- APP -->
 <div id="app">
@@ -602,7 +609,6 @@ textarea.sheet-input { resize: none; height: 80px; }
         <div class="profile-name">Cansu Özçeri</div>
         <div class="profile-role">Doktor &nbsp;·&nbsp; 🩺</div>
       </div>
-
       <div id="profile-fields"></div>
     </div>
 
@@ -712,108 +718,6 @@ const PROFILE_FIELDS = [
   {key:'notes',     icon:'⚠️', label:'Önemli Notlar',      val:''},
 ];
 
-// Haftada bir güncellenir — bu haftanın notu
-const PSYCH_WEEK = getWeekNumber(new Date());
-
-const PSYCH_NOTES = [
-  {
-    theme: 'Bağlanma & Sevgi',
-    thinker: 'John Bowlby',
-    field: 'Bağlanma Teorisi',
-    note: 'Bowlby\'ye göre güvenli bağlanma, çocuklukta bir "güvenli üs" deneyimiyle başlar. Yetişkinlikte de romantik ilişkiler bu örüntüyü yansıtır: güvenli bağlanan bireyler hem bağımsız olabilir, hem de derin yakınlık kurabilirler. Bağlanma stili değişmez değildir — farkındalık ve sağlıklı bir ilişki bağlanma biçimini yeniden şekillendirebilir.',
-    quote: '"Güvenli bağlanma, özgür keşfin temelidir."',
-    author: 'John Bowlby'
-  },
-  {
-    theme: 'Sevginin Psikolojisi',
-    thinker: 'Erich Fromm',
-    field: 'Hümanist Psikanalizm',
-    note: 'Fromm\'a göre sevgi bir duygu değil, bir sanattır — öğrenilmesi ve pratik yapılması gerekir. "Sahip olma" değil, "olma" modunda yaşayan insanlar sevgide de özgürlük tanır. Olgun sevgi şunu der: "Seni seviyorum çünkü seni seviyorum" — değiş tokuş değil, özgür bir eylem.',
-    quote: '"Olgun sevgi şunu der: Ben seni sevdiğim için sana ihtiyacım var. Olgunlaşmamış sevgi şunu der: Sana ihtiyacım olduğu için seni seviyorum."',
-    author: 'Erich Fromm'
-  },
-  {
-    theme: 'Anlam & Varoluş',
-    thinker: 'Viktor Frankl',
-    field: 'Logoterapi',
-    note: 'Frankl, anlam aramanın insan varoluşunun temel itici gücü olduğunu savundu. En ağır koşullarda bile — toplama kampında bile — insanlar anlam bulabiliyordu. Bir ilişkinin anlamı da "neden" sorusuna verilecek cevapla güçlenir: bu birliktelik neden değerli? Bu soruyu düşünmek, ilişkiyi sağlamlaştırır.',
-    quote: '"Hayata bir "neden" olan kişi, neredeyse her "nasıl"a katlanabilir."',
-    author: 'Viktor Frankl'
-  },
-  {
-    theme: 'Gölge & Bütünleşme',
-    thinker: 'Carl Jung',
-    field: 'Analitik Psikoloji',
-    note: 'Jung\'a göre "gölge", kabul etmediğimiz yanlarımızın barındığı bilinçdışı alandır. Partnerimizde bizi en çok rahatsız eden şeyler çoğunlukla kendi gölgemizin yansımasıdır. Bu farkındalık, ilişkilerde öfkeyi empatiyle, yargıyı merakla değiştirme kapısını açar. Kendini tanımak, karşındakini anlamanın başlangıcıdır.',
-    quote: '"Başkalarında bizi rahatsız eden her şey, kendimizi anlamaya götürebilir."',
-    author: 'Carl Jung'
-  },
-  {
-    theme: 'Varoluşsal Yalnızlık',
-    thinker: 'Irvin Yalom',
-    field: 'Varoluşsal Psikoterapi',
-    note: 'Yalom\'a göre dört temel varoluşsal kaygı vardır: ölüm, özgürlük, anlamsızlık ve yalnızlık. Varoluşsal yalnızlık hiçbir zaman tam olarak giderilemez — en derin ilişkide bile bir kişi olarak yalnızsınızdır. Ama bu gerçeği kabullenmek, ilişkiyi daha otantik kılar: birbirinizi "kurtarmak" için değil, birlikte "olmak" için biraradasınız.',
-    quote: '"Yalnız kalabilme kapasitesi, sevebilme kapasitesidir."',
-    author: 'Irvin Yalom'
-  },
-  {
-    theme: 'Özgünlük & Kaygı',
-    thinker: 'Rollo May',
-    field: 'Varoluşsal Psikoloji',
-    note: 'May\'e göre kaygı, özgürlüğün doğal eşlikçisidir. Gerçek bir seçim yaparken — bir kişiyi sevmeyi, bir hayat kurmayı — kaygı hissedilmesi normaldir. Bunu bastırmak değil, onunla birlikte hareket etmek sağlıklı olanıdır. Cesaret, korku yokken değil, korku varken eyleme geçmektir.',
-    quote: '"Cesaret, korkusuzluk değildir; korkuya rağmen ilerleme yetisidir."',
-    author: 'Rollo May'
-  },
-  {
-    theme: 'Bilişsel Çarpıtmalar',
-    thinker: 'Aaron Beck',
-    field: 'Bilişsel Terapi',
-    note: 'Beck\'in bilişsel teorisine göre düşüncelerimiz duygu ve davranışlarımızı şekillendirir. İlişkilerde sık görülen çarpıtmalar şunlardır: "zihin okuma" (partnerim ne düşündüğünü biliyorum), "felaketleştirme" (bu tartışma her şeyi mahveder), "ya hep ya hiç" (mükemmel değilse hiç değil). Bu örüntüleri fark etmek, değişimin ilk adımıdır.',
-    quote: '"Düşüncelerini değiştir, hayatını değiştirirsin."',
-    author: 'Aaron Beck'
-  },
-  {
-    theme: 'İnferiority & Büyüme',
-    thinker: 'Alfred Adler',
-    field: 'Bireysel Psikoloji',
-    note: 'Adler, her insanın bir "aşağılık duygusu" ile doğduğunu ve hayatının bu duyguyu aşma çabası üzerine kurulduğunu öne sürdü. Sağlıklı bireylerde bu çaba sosyal ilgiyle — başkalarına katkıda bulunma arzusuyla — yönlendirilir. İlişkide birbirinin güçlenmesini istemek, olgun sevginin göstergesidir.',
-    quote: '"Bir insanın değeri, başkalarına ne kattığıyla ölçülür."',
-    author: 'Alfred Adler'
-  },
-  {
-    theme: 'Nörotik İhtiyaçlar',
-    thinker: 'Karen Horney',
-    field: 'Neofreudyen Psikanaliz',
-    note: 'Horney\'e göre temel kaygı — dünyanın düşmanca olduğu hissi — çocuklukta yetersiz güvenlik ortamından doğar. Bu kaygıyı gidermeye çalışırken üç yöne yöneliriz: insanlara doğru (bağımlılık), insanlara karşı (saldırganlık) veya insanlardan uzağa (çekilme). Sağlıklı ilişki bu üç yönelimi esnek biçimde kullanabilmektir.',
-    quote: '"İç büyüme, özünde "olmalıyım"ların tiranlığından kurtuluştur."',
-    author: 'Karen Horney'
-  },
-  {
-    theme: 'Bilinçdışı & Rüyalar',
-    thinker: 'Sigmund Freud',
-    field: 'Psikanaliz',
-    note: 'Freud\'a göre bilinçdışı, bastırılmış arzu, korku ve anıların deposudur. Rüyalar bu içeriğin sembolik dışavurumudur — "bilinçdışının kraliyet yolu." Sevdiğimiz insanlarla ilgili tekrar eden rüyalar ya da duygular, bilinçdışı bağların gücünü yansıtabilir. Freud için bilinçdışını keşfetmek, kendini özgür kılmaktır.',
-    quote: '"Söylenmeyenler gömülü kalır; ama daha sonra daha çirkin biçimlerde ortaya çıkar."',
-    author: 'Sigmund Freud'
-  },
-  {
-    theme: 'Şimdiki An & Farkındalık',
-    thinker: 'William James',
-    field: 'Psikoloji & Pragmatizm',
-    note: 'James, dikkatimizi yönlendirme kapasitesini "özgür iradenin büyük eseri" olarak tanımladı. Sevgi dolu ilişkilerde dikkat bir hediyedir: tamamen orada olmak, telefonsuz, düşüncesiz, sadece karşındakiyle. James\'e göre alışkanlıklar karakteri yaratır — "dikkatli olmak" da bir alışkanlık olarak geliştirilebilir.',
-    quote: '"Dikkatimizi isteyerek yönetebilme yetisi, yargı gücünün, karakterin ve iradenin temelidir."',
-    author: 'William James'
-  },
-  {
-    theme: 'Kolektif Bilinçdışı',
-    thinker: 'Carl Jung',
-    field: 'Analitik Psikoloji',
-    note: 'Jung\'un kolektif bilinçdışı kavramı, tüm insanlığın paylaştığı sembolik içerikleri — arketipleri — barındırır. "Anima" ve "animus" arketipleri, bizdeki eril ve dişil enerjiyi temsil eder. Partner seçiminde bilinçdışı olarak bu arketipleri yansıtan birini ararız. Bu farkındalık, ilişkiyi daha bilinçli, daha seçici kılar.',
-    quote: '"Kendinize baktığınızda içeride karanlık görürseniz, en azından orada bir şeyler var."',
-    author: 'Carl Jung'
-  },
-];
-
 function getWeekNumber(d) {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -822,7 +726,37 @@ function getWeekNumber(d) {
   return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
 }
 
-// ── SUPABASE SYNC ─────────────────────────────────────────────────────────────
+const PSYCH_WEEK = getWeekNumber(new Date());
+
+const PSYCH_NOTES = [
+  {
+    theme: 'Bağlanma & Sevgi', thinker: 'John Bowlby', field: 'Bağlanma Teorisi',
+    note: 'Bowlby\'ye göre güvenli bağlanma, çocuklukta bir "güvenli üs" deneyimiyle başlar. Yetişkinlikte de romantik ilişkiler bu örüntüyü yansıtır: güvenli bağlanan bireyler hem bağımsız olabilir, hem de derin yakınlık kurabilirler. Bağlanma stili değişmez değildir — farkındalık ve sağlıklı bir ilişki bağlanma biçimini yeniden şekillendirebilir.',
+    quote: '"Güvenli bağlanma, özgür keşfin temelidir."', author: 'John Bowlby'
+  },
+  {
+    theme: 'Sevginin Psikolojisi', thinker: 'Erich Fromm', field: 'Hümanist Psikanalizm',
+    note: 'Fromm\'a göre sevgi bir duygu değil, bir sanattır — öğrenilmesi ve pratik yapılması gerekir. "Sahip olma" değil, "olma" modunda yaşayan insanlar sevgide de özgürlük tanır. Olgun sevgi şunu der: "Seni seviyorum çünkü seni seviyorum" — değiş tokuş değil, özgür bir eylem.',
+    quote: '"Olgun sevgi şunu der: Ben seni sevdiğim için sana ihtiyacım var."', author: 'Erich Fromm'
+  },
+  {
+    theme: 'Anlam & Varoluş', thinker: 'Viktor Frankl', field: 'Logoterapi',
+    note: 'Frankl, anlam aramanın insan varoluşunun temel itici gücü olduğunu savundu. En ağır koşullarda bile insanlar anlam bulabiliyordu. Bir ilişkinin anlamı da "neden" sorusuna verilecek cevapla güçlenir: bu birliktelik neden değerli? Bu soruyu düşünmek, ilişkiyi sağlamlaştırır.',
+    quote: '"Hayata bir "neden" olan kişi, neredeyse her "nasıl"a katlanabilir."', author: 'Viktor Frankl'
+  },
+  {
+    theme: 'Gölge & Bütünleşme', thinker: 'Carl Jung', field: 'Analitik Psikoloji',
+    note: 'Jung\'a göre "gölge", kabul etmediğimiz yanlarımızın barındığı bilinçdışı alandır. Partnerimizde bizi en çok rahatsız eden şeyler çoğunlukla kendi gölgemizin yansımasıdır. Bu farkındalık, ilişkilerde öfkeyi empatiyle değiştirme kapısını açar.',
+    quote: '"Başkalarında bizi rahatsız eden her şey, kendimizi anlamaya götürebilir."', author: 'Carl Jung'
+  },
+  {
+    theme: 'Varoluşsal Yalnızlık', thinker: 'Irvin Yalom', field: 'Varoluşsal Psikoterapi',
+    note: 'Yalom\'a göre dört temel varoluşsal kaygı vardır: ölüm, özgürlük, anlamsızlık ve yalnızlık. Varoluşsal yalnızlık hiçbir zaman tam olarak giderilemez. Ama bu gerçeği kabullenmek, ilişkiyi daha otantik kılar: birbirinizi "kurtarmak" için değil, birlikte "olmak" için biraradasınız.',
+    quote: '"Yalnız kalabilme kapasitesi, sevebilme kapasitesidir."', author: 'Irvin Yalom'
+  },
+];
+
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SB_URL = 'https://obtteztxqsthlictthlx.supabase.co';
 const SB_KEY = 'sb_publishable_Y7L7dgmbDDBy0XdoJheJtQ_YekLSEO1';
 const SB_HEADERS = {
@@ -832,7 +766,7 @@ const SB_HEADERS = {
   'Prefer': 'return=representation'
 };
 
-// Local cache (fallback offline)
+// Local cache
 const L = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
   set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
@@ -842,9 +776,9 @@ const L = {
 async function dbGet(table) {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/${table}?select=*`, { headers: SB_HEADERS });
-    if (!r.ok) return null;
+    if (!r.ok) { console.warn('dbGet failed', table, r.status, await r.text()); return null; }
     return await r.json();
-  } catch(e) { return null; }
+  } catch(e) { console.warn('dbGet error', table, e); return null; }
 }
 
 async function dbUpsert(table, row) {
@@ -853,8 +787,9 @@ async function dbUpsert(table, row) {
     const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
       method: 'POST', headers: h, body: JSON.stringify(row)
     });
-    return r.ok;
-  } catch(e) { return false; }
+    if (!r.ok) { console.warn('dbUpsert failed', table, r.status, await r.text()); return false; }
+    return true;
+  } catch(e) { console.warn('dbUpsert error', table, e); return false; }
 }
 
 async function dbDelete(table, id) {
@@ -862,39 +797,43 @@ async function dbDelete(table, id) {
     const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
       method: 'DELETE', headers: SB_HEADERS
     });
-    return r.ok;
-  } catch(e) { return false; }
+    if (!r.ok) { console.warn('dbDelete failed', table, r.status); return false; }
+    return true;
+  } catch(e) { console.warn('dbDelete error', e); return false; }
 }
 
-// ── Realtime polling (her 8 saniyede sync) ────────────────────────────────────
+// ── Realtime polling ──────────────────────────────────────────────────────────
 let _lastMemHash = '', _lastTlHash = '', _lastProfHash = '';
+let _syncStarted = false;
 
 async function pollSync() {
   // Memories
   const mems = await dbGet('memories');
-  if (mems) {
+  if (mems !== null) {
     const h = JSON.stringify(mems);
     if (h !== _lastMemHash) {
       _lastMemHash = h;
-      const sorted = mems.sort((a,b) => b.created_at?.localeCompare(a.created_at||'') || 0);
+      const sorted = [...mems].sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
       L.set('memories', sorted);
       renderMemories();
     }
   }
-  // Timeline
+
+  // Timeline — fotoğraf alanı hariç karşılaştır (büyük base64 atla)
   const tl = await dbGet('timeline');
-  if (tl && tl.length) {
-    const h = JSON.stringify(tl);
+  if (tl !== null) {
+    const h = JSON.stringify(tl.map(t => ({...t, photo: t.photo ? '✓' : null})));
     if (h !== _lastTlHash) {
       _lastTlHash = h;
-      const sorted = tl.sort((a,b) => a.date.localeCompare(b.date));
+      const sorted = [...tl].sort((a,b) => a.date.localeCompare(b.date));
       L.set('timeline', sorted);
       renderTimeline();
     }
   }
+
   // Profile
   const prof = await dbGet('profile');
-  if (prof && prof.length) {
+  if (prof !== null && prof.length) {
     const h = JSON.stringify(prof[0]);
     if (h !== _lastProfHash) {
       _lastProfHash = h;
@@ -904,24 +843,60 @@ async function pollSync() {
   }
 }
 
-function startSync() {
+async function startSync() {
+  if (_syncStarted) return;
+  _syncStarted = true;
+
+  // İlk yükleme: Supabase'den timeline'ı çek, boşsa default'ları yükle
+  await initTimelineFromDB();
+
   pollSync();
   setInterval(pollSync, 8000);
 }
 
-// ── Sync indicator ────────────────────────────────────────────────────────────
-function showSyncing() {
-  let el = document.getElementById('sync-dot');
-  if (!el) return;
-  el.style.background = '#B89A6A';
-  setTimeout(() => { if(el) el.style.background = '#6BCB77'; }, 1000);
+// Timeline'ı Supabase'den çek, boşsa default'ları kaydet
+async function initTimelineFromDB() {
+  const tl = await dbGet('timeline');
+
+  if (tl === null) {
+    // Bağlantı hatası — localStorage'daki varsa kullan, yoksa default göster
+    if (!L.get('timeline')) L.set('timeline', DEFAULT_TIMELINE);
+    renderTimeline();
+    return;
+  }
+
+  if (tl.length === 0) {
+    // Supabase boş — default'ları hem localStorage'a hem Supabase'e yaz
+    console.log('Timeline boş, default\'lar yükleniyor...');
+    L.set('timeline', DEFAULT_TIMELINE);
+    renderTimeline();
+    // Default'ları Supabase'e gönder (photo alanı olmadan)
+    for (const item of DEFAULT_TIMELINE) {
+      const row = { id: item.id, date: item.date, title: item.title, desc: item.desc || '', filled: item.filled };
+      await dbUpsert('timeline', row);
+    }
+    _lastTlHash = JSON.stringify(DEFAULT_TIMELINE.map(t => ({...t, photo: null})));
+  } else {
+    // Supabase'de veri var — kullan
+    const sorted = [...tl].sort((a,b) => a.date.localeCompare(b.date));
+    L.set('timeline', sorted);
+    _lastTlHash = JSON.stringify(tl.map(t => ({...t, photo: t.photo ? '✓' : null})));
+    renderTimeline();
+  }
 }
 
-// ── STORAGE API (drop-in replacement) ────────────────────────────────────────
+// ── Sync indicator ────────────────────────────────────────────────────────────
+function showSyncing() {
+  const dot = document.getElementById('sync-dot');
+  const toast = document.getElementById('saving-toast');
+  if (dot) dot.style.background = '#B89A6A';
+  if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1500); }
+  setTimeout(() => { if(dot) dot.style.background = '#6BCB77'; }, 1500);
+}
+
+// ── PROFILE helpers ───────────────────────────────────────────────────────────
 function loadProfile() {
-  const stored = L.get('profile');
-  if (stored) return stored;
-  return { birthday: '1997-05-21' };
+  return L.get('profile') || { birthday: '1997-05-21' };
 }
 
 async function saveProfile(p) {
@@ -930,21 +905,13 @@ async function saveProfile(p) {
   showSyncing();
 }
 
+// ── MEMORIES helpers ──────────────────────────────────────────────────────────
 function loadMemories() { return L.get('memories') || []; }
 
-async function saveMemories(m) {
-  L.set('memories', m);
-  showSyncing();
-}
-
+// ── TIMELINE helpers ──────────────────────────────────────────────────────────
 function loadTimeline() { return L.get('timeline') || DEFAULT_TIMELINE; }
 
-async function saveTimeline(t) {
-  L.set('timeline', t);
-  showSyncing();
-}
-
-// ── SPLASH ─────────────────────────────────────────────────────────────────────
+// ── SPLASH ────────────────────────────────────────────────────────────────────
 const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 document.getElementById('splashQuote').textContent = `"${q.q}"`;
 document.getElementById('splashAuthor').textContent = `— ${q.a}`;
@@ -954,10 +921,9 @@ function enterApp() {
   document.getElementById('app').classList.add('show');
   initAll();
 }
-// Also enter on tap anywhere on splash
 document.getElementById('splash').addEventListener('click', enterApp);
 
-// ── TABS ───────────────────────────────────────────────────────────────────────
+// ── TABS ──────────────────────────────────────────────────────────────────────
 function goTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -965,7 +931,7 @@ function goTab(name, btn) {
   btn.classList.add('active');
 }
 
-// ── INIT ───────────────────────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────────────────────
 function initAll() {
   initHome();
   initProfile();
@@ -975,13 +941,12 @@ function initAll() {
   startSync();
 }
 
-// ── HOME ───────────────────────────────────────────────────────────────────────
+// ── HOME ──────────────────────────────────────────────────────────────────────
 function initHome() {
   const start = new Date('2025-11-06');
   const today = new Date();
   const days = Math.floor((today - start) / 864e5);
 
-  // Animate day counter
   let i = 0;
   const el = document.getElementById('dayNum');
   const iv = setInterval(() => {
@@ -992,11 +957,8 @@ function initHome() {
 
   document.getElementById('stat-hours').textContent = (days * 24).toLocaleString('tr-TR');
   document.getElementById('stat-mins').textContent = (days * 1440).toLocaleString('tr-TR');
-
-  // Header day
   document.getElementById('headerDay').textContent = days + '. Gün';
 
-  // Countdowns
   function daysUntil(month, day) {
     const t = new Date();
     let d = new Date(t.getFullYear(), month-1, day);
@@ -1012,7 +974,6 @@ function initHome() {
   const d500 = Math.ceil((day500 - today) / 864e5);
   document.getElementById('cd-500').textContent = d500 > 0 ? d500 : '✓';
 
-  // Birthday from profile
   const prof = loadProfile();
   if (prof.birthday) {
     const [y,m,d] = prof.birthday.split('-').map(Number);
@@ -1023,7 +984,7 @@ function initHome() {
   }
 }
 
-// ── PROFILE ────────────────────────────────────────────────────────────────────
+// ── PROFILE ───────────────────────────────────────────────────────────────────
 function initProfile() {
   const prof = loadProfile();
   const container = document.getElementById('profile-fields');
@@ -1071,17 +1032,16 @@ function saveProfileField(key) {
   closeSheet();
   initProfile();
   if (key === 'birthday') initHome();
-  // Arka planda Supabase'e gönder
   dbUpsert('profile', { id: 1, data: prof }).then(showSyncing);
 }
 
-// ── MEMORIES ───────────────────────────────────────────────────────────────────
+// ── MEMORIES ──────────────────────────────────────────────────────────────────
 let _memMood = 'romantic';
-let _memPhoto = null;
+let _memPhotoData = null;  // base64 — sadece local gösterim için
 let _memDate = new Date().toISOString().slice(0,10);
 
 function openMemorySheet() {
-  _memMood = 'romantic'; _memPhoto = null; _memDate = new Date().toISOString().slice(0,10);
+  _memMood = 'romantic'; _memPhotoData = null; _memDate = new Date().toISOString().slice(0,10);
   showSheet(`
     <p class="sheet-title">Yeni Anı</p>
     <input type="text" class="sheet-input" id="mem-title" placeholder="Başlık…">
@@ -1093,7 +1053,7 @@ function openMemorySheet() {
       <button class="mood-pill" onclick="selMood('poetic',this)">🌸 Şiirsel</button>
       <button class="mood-pill" onclick="selMood('funny',this)">😂 Komik</button>
     </div>
-    <button class="sheet-photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
+    <button class="sheet-photo-btn" id="photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
     <button class="sheet-save" onclick="saveMemory()">Kaydet</button>
   `);
 }
@@ -1107,11 +1067,23 @@ function selMood(mood, btn) {
 document.getElementById('photo-input').addEventListener('change', function() {
   const file = this.files[0];
   if (!file) return;
+  // Fotoğrafı sıkıştır — max 800px, quality 0.7
+  const img = new Image();
   const reader = new FileReader();
   reader.onload = e => {
-    _memPhoto = e.target.result;
-    const btn = document.querySelector('.sheet-photo-btn');
-    if (btn) btn.textContent = '✓ Fotoğraf seçildi';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      _memPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+      const btn = document.getElementById('photo-btn') || document.querySelector('.sheet-photo-btn');
+      if (btn) btn.textContent = '✓ Fotoğraf seçildi';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
   this.value = '';
@@ -1125,23 +1097,41 @@ function randomCaption(mood) {
 async function saveMemory() {
   const title = document.getElementById('mem-title')?.value.trim();
   const date  = document.getElementById('mem-date')?.value;
-  if (!title) return;
+  if (!title) { alert('Lütfen bir başlık gir.'); return; }
+
   const mem = {
     id: Date.now().toString(),
-    title, date: date || _memDate,
+    title,
+    date: date || _memDate,
     mood: _memMood,
     caption: randomCaption(_memMood),
-    photo: _memPhoto || null,
+    photo: _memPhotoData || null,
     created_at: new Date().toISOString()
   };
-  // Hemen kaydet ve göster — bekletme
+
+  // Önce local'e yaz ve göster
   const list = loadMemories();
   list.unshift(mem);
   L.set('memories', list);
   closeSheet();
   renderMemories();
-  // Arka planda Supabase'e gönder
-  dbUpsert('memories', mem).then(showSyncing);
+  showSyncing();
+
+  // Supabase'e gönder — fotoğraf varsa ayrı, yoksa direkt
+  const rowForDB = {
+    id: mem.id,
+    title: mem.title,
+    date: mem.date,
+    mood: mem.mood,
+    caption: mem.caption,
+    photo: mem.photo,   // sıkıştırılmış base64 — makul boyutta
+    created_at: mem.created_at
+  };
+
+  const ok = await dbUpsert('memories', rowForDB);
+  if (!ok) {
+    console.warn('Memories kaydedilemedi, local\'de kalacak');
+  }
 }
 
 function renderMemories() {
@@ -1168,16 +1158,17 @@ function renderMemories() {
 async function deleteMem(id) {
   const list = loadMemories().filter(m => m.id !== id);
   L.set('memories', list);
+  _lastMemHash = '';  // force re-render on next poll
+  renderMemories();
   await dbDelete('memories', id);
   showSyncing();
-  renderMemories();
 }
 
 function moodLabel(mood) {
   return {romantic:'💜 Romantik', nostalgic:'🌙 Nostaljik', poetic:'🌸 Şiirsel', funny:'😂 Komik'}[mood] || '';
 }
 
-// ── TIMELINE ───────────────────────────────────────────────────────────────────
+// ── TIMELINE ──────────────────────────────────────────────────────────────────
 function renderTimeline() {
   const items = loadTimeline();
   const el = document.getElementById('timeline-list');
@@ -1203,20 +1194,21 @@ function renderTimeline() {
 async function deleteTlItem(id) {
   const items = loadTimeline().filter(t => t.id !== id);
   L.set('timeline', items);
+  _lastTlHash = '';  // force re-render on next poll
+  renderTimeline();
   await dbDelete('timeline', id);
   showSyncing();
-  renderTimeline();
 }
 
 function openTimelineSheet() {
-  _memPhoto = null;
+  _memPhotoData = null;
   const today = new Date().toISOString().slice(0,10);
   showSheet(`
     <p class="sheet-title">Zaman Tüneliine Ekle</p>
     <input type="text" class="sheet-input" id="tl-title" placeholder="Başlık…">
     <input type="text" class="sheet-input" id="tl-desc" placeholder="Açıklama… (isteğe bağlı)">
     <input type="date" class="sheet-input" id="tl-date" value="${today}">
-    <button class="sheet-photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
+    <button class="sheet-photo-btn" id="photo-btn" onclick="document.getElementById('photo-input').click()">📷 Fotoğraf Ekle</button>
     <button class="sheet-save" onclick="saveTlItem()">Ekle</button>
   `);
 }
@@ -1225,24 +1217,45 @@ async function saveTlItem() {
   const title = document.getElementById('tl-title')?.value.trim();
   const desc  = document.getElementById('tl-desc')?.value.trim();
   const date  = document.getElementById('tl-date')?.value;
-  if (!title) return;
-  const item = { id: Date.now().toString(), title, desc, date, filled: true, photo: _memPhoto || null };
+  if (!title) { alert('Lütfen bir başlık gir.'); return; }
+
+  const item = {
+    id: Date.now().toString(),
+    title,
+    desc: desc || '',
+    date,
+    filled: true,
+    photo: _memPhotoData || null
+  };
+
+  // Önce local'e yaz ve göster
   const items = loadTimeline();
   items.push(item);
   items.sort((a,b) => a.date.localeCompare(b.date));
   L.set('timeline', items);
   closeSheet();
   renderTimeline();
-  // Arka planda Supabase'e gönder
-  dbUpsert('timeline', item).then(showSyncing);
+  showSyncing();
+
+  // Supabase'e gönder
+  const rowForDB = {
+    id: item.id,
+    title: item.title,
+    desc: item.desc,
+    date: item.date,
+    filled: item.filled,
+    photo: item.photo
+  };
+
+  const ok = await dbUpsert('timeline', rowForDB);
+  if (!ok) {
+    console.warn('Timeline kaydedilemedi, local\'de kalacak');
+  }
 }
 
-// ── LETTERS ────────────────────────────────────────────────────────────────────
+// ── LETTERS ───────────────────────────────────────────────────────────────────
 function renderLetters() {
   const el = document.getElementById('letter-list');
-  // This week's note (cycles through the list by week number)
-  const thisWeek = PSYCH_NOTES[PSYCH_WEEK % PSYCH_NOTES.length];
-  // Show this week's + 2 previous
   const shown = [];
   for (let i = 0; i < Math.min(3, PSYCH_NOTES.length); i++) {
     shown.push(PSYCH_NOTES[(PSYCH_WEEK - i + PSYCH_NOTES.length) % PSYCH_NOTES.length]);
@@ -1257,15 +1270,15 @@ function renderLetters() {
     </div>
     ${shown.map((note, i) => `
     <div class="letter-card" style="animation-delay:${i*0.1}s;${i===0?'border-left-color:var(--rose)':'border-left-color:var(--gold)'}">
-      ${i===0 ? '<div class="letter-num" style="color:var(--rose)">Bu Hafta</div>' : `<div class="letter-num">Geçen Hafta ${i>1?i:''}  </div>`}
+      ${i===0 ? '<div class="letter-num" style="color:var(--rose)">Bu Hafta</div>' : `<div class="letter-num">Geçen Hafta ${i>1?i:''}</div>`}
       <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap">
-        <span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">${note.thinker}</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">${note.thinker}</span>
         <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)">${note.field}</span>
       </div>
       <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px">${note.theme}</div>
       <div class="letter-text" style="font-style:normal;font-size:14px;line-height:1.75;color:var(--ink2)">${note.note}</div>
       <div style="margin-top:18px;padding:14px 16px;background:var(--cream2);border-radius:2px;border-left:2px solid var(--rose)">
-        <div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;font-style:italic;color:var(--ink);line-height:1.6">${note.quote}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:var(--ink);line-height:1.6">${note.quote}</div>
         <div style="margin-top:8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)">— ${note.author}</div>
       </div>
     </div>
